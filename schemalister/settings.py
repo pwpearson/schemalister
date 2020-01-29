@@ -76,6 +76,7 @@ DATABASES = {
 
 # Celery settings
 BROKER_POOL_LIMIT = 1
+CELERYD_HIJACK_ROOT_LOGGER = False
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.6/topics/i18n/
@@ -119,6 +120,7 @@ LOGGING = {
             '()': 'django.utils.log.RequireDebugFalse'
         }
     },
+
     'handlers': {
         'mail_admins': {
             'level': 'ERROR',
@@ -132,9 +134,9 @@ LOGGING = {
         },
     },
     'loggers': {
-        'django.request': {
-            'handlers': ['mail_admins', 'file'],
-            'level': 'ERROR',
+        '': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
             'propagate': True,
         },
     }
