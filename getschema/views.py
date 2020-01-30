@@ -76,6 +76,8 @@ def oauth_response(request):
             org_id = auth_response['id'][:-19]
             org_id = org_id[-18:]
 
+            print("Access_token: ", access_token)
+
             # get username of the authenticated user
             r = requests.get(instance_url + '/services/data/v' + str(settings.SALESFORCE_API_VERSION) + '.0/sobjects/User/' + user_id + '?fields=Username', headers={'Authorization': 'OAuth ' + access_token})
             query_response = json.loads(r.text)

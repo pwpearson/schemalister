@@ -162,9 +162,11 @@ def get_objects_and_fields(schema):
                     new_object.save()
 
                     # query for fields in the object
-                    object_describe = requests.get(instance_url + sObject['urls']['describe'],
-                                                   headers={'Authorization': 'Bearer ' + access_token,
-                                                            'content-type': 'application/json'})
+                    describeURL = instance_url + sObject['urls']['describe']
+
+                    print("**** GET - describe(" + object_name + "): ", describeURL)
+
+                    object_describe = requests.get(describeURL, headers=headers)
 
                     # Loop through fields
                     for field in object_describe.json()['fields']:
