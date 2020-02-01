@@ -195,9 +195,14 @@ def export(request, schema_id):
 
         # Create workbook
         book = Workbook(output, {'in_memory': True})
+        book.set_properties({'title': 'Data Dictionary',
+                             'author': 'Rick Pearson',
+                             'created': datetime.datetime.utcnow()})
 
         # Set up bold format
         bold = book.add_format({'bold': True})
+
+        cell_format = book.add_format({'text_wrap': True, 'align': 'left', 'align': 'top'})
 
         # List of unique names, as 31 characters is the limit for an object
         # and the worksheets names must be unique
@@ -228,7 +233,23 @@ def export(request, schema_id):
                 unique_names.append(api_name)
 
                 # Create sheet
-                sheet = book.add_worksheet(api_name_unique)    
+                sheet = book.add_worksheet(api_name_unique)
+
+                # Set Column Widths (excel blows these values up by 7x's)
+                sheet.set_column(0, 0, 39)  # Label
+                sheet.set_column(1, 1, 42)  # API Name
+                sheet.set_column(2, 2, 71)  # Type
+                sheet.set_column(3, 3, 39)  # Help Text
+                sheet.set_column(4, 4, 32)  # Formula
+                sheet.set_column(5, 5, 17)  # Attributes
+                sheet.set_column(6, 6, 71)  # Description
+                sheet.set_column(7, 7, 71)  # Field Usage
+
+                # Freeze Column Rows
+                sheet.freeze_panes(1, 3)
+
+                # Set Auto Filter
+                sheet.autofilter(0, 7, 9999, 9999)
 
                 # Write column headers
                 sheet.write(0, 0, 'Field Label', bold)
@@ -237,10 +258,11 @@ def export(request, schema_id):
                 sheet.write(0, 3, 'Help Text', bold)
                 sheet.write(0, 4, 'Formula', bold)
                 sheet.write(0, 5, 'Attributes', bold)
+                sheet.write(0, 6, 'Description', bold)
 
                 # If the usage needs to be included, add the columns
                 if schema.include_field_usage:
-                    sheet.write(0, 6, 'Field Usage', bold)
+                    sheet.write(0, 7, 'Field Usage', bold)
 
                 # Iterate over fields in object
                 for index, field in enumerate(obj.sorted_fields()):
@@ -249,21 +271,39 @@ def export(request, schema_id):
                     row = index + 1
 
                     # Write fields to row
-                    sheet.write(row, 0, field.label)
-                    sheet.write(row, 1, field.api_name)
-                    sheet.write(row, 2, field.data_type)
-                    sheet.write(row, 3, field.help_text)
-                    sheet.write(row, 4, field.formula)
-                    sheet.write(row, 5, field.attributes)
+                    sheet.write(row, 0, field.label, cell_format)
+                    sheet.write(row, 1, field.api_name, cell_format)
+                    sheet.write(row, 2, field.data_type, cell_format)
+                    sheet.write(row, 3, field.help_text, cell_format)
+                    sheet.write(row, 4, field.formula, cell_format)
+                    sheet.write(row, 5, field.attributes, cell_format)
+                    sheet.write(row, 6, field.description, cell_format)
 
                     if schema.include_field_usage:
-                        sheet.write(row, 6, field.field_usage_display_text)
+                        sheet.write(row, 7, field.field_usage_display_text, cell_format)
 
         # This puts all fields on the one worksheet
         else:
 
             # Create sheet
-            sheet = book.add_worksheet('Schema')   
+            sheet = book.add_worksheet('Schema')
+
+            # Set Column Widths (excel blows these values up by 7x's)
+            sheet.set_column(0, 0, 36)  # Object
+            sheet.set_column(1, 1, 39)  # Label
+            sheet.set_column(2, 2, 42)  # API Name
+            sheet.set_column(3, 3, 71)  # Type
+            sheet.set_column(4, 4, 39)  # Help Text
+            sheet.set_column(5, 5, 32)  # Formula
+            sheet.set_column(6, 6, 17)  # Attributes
+            sheet.set_column(7, 7, 71)  # Description
+            sheet.set_column(8, 8, 71)  # Field Usage
+
+            # Freeze Column Rows
+            sheet.freeze_panes(1, 3)
+
+            # Set Auto Filter
+            sheet.autofilter(0, 8, 9999, 9999)
 
             # Write column headers
             sheet.write(0, 0, 'Object', bold)
@@ -273,10 +313,11 @@ def export(request, schema_id):
             sheet.write(0, 4, 'Help Text', bold)
             sheet.write(0, 5, 'Formula', bold)
             sheet.write(0, 6, 'Attributes', bold)
+            sheet.write(0, 7, 'Description', bold)
 
             # If the usage needs to be included, add the columns
             if schema.include_field_usage:
-                sheet.write(0, 7, 'Field Usage', bold)
+                sheet.write(0, 8, 'Field Usage', bold)
 
             # Set start row
             row = 1
@@ -288,16 +329,17 @@ def export(request, schema_id):
                 for index, field in enumerate(obj.sorted_fields()):
 
                     # Write fields to row
-                    sheet.write(row, 0, obj.api_name)
-                    sheet.write(row, 1, field.label)
-                    sheet.write(row, 2, field.api_name)
-                    sheet.write(row, 3, field.data_type)
-                    sheet.write(row, 4, field.help_text)
-                    sheet.write(row, 5, field.formula)
-                    sheet.write(row, 6, field.attributes)
+                    sheet.write(row, 0, obj.api_name, cell_format)
+                    sheet.write(row, 1, field.label, cell_format)
+                    sheet.write(row, 2, field.api_name, cell_format)
+                    sheet.write(row, 3, field.data_type, cell_format)
+                    sheet.write(row, 4, field.help_text, cell_format)
+                    sheet.write(row, 5, field.formula, cell_format)
+                    sheet.write(row, 6, field.attributes, cell_format)
+                    sheet.write(row, 7, field.description, cell_format)
 
                     if schema.include_field_usage:
-                        sheet.write(row, 7, field.field_usage_display_text)
+                        sheet.write(row, 8, field.field_usage_display_text, cell_format)
 
                     row += 1
 

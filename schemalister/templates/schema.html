@@ -78,6 +78,7 @@
                             <th width="{% if schema.include_field_usage %}12%{% else %}16%{% endif %}">Help Text</th>
                             <th width="{% if schema.include_field_usage %}16%{% else %}18%{% endif %}">Formula</th>
                             <th width="{% if schema.include_field_usage %}16%{% else %}18%{% endif %}">Attributes</th>
+                            <th width="{% if schema.include_field_usage %}16%{% else %}18%{% endif %}">Description</th>
                             {% if schema.include_field_usage %}
                                 <th width="20%">Field Usage</th>
                             {% endif %}
@@ -94,6 +95,7 @@
                             <td>{% if field.help_text %}{{ field.help_text|linebreaks }}{% endif %}</td>
                             <td>{{ field.formula|default_if_none:""|linebreaks }}</td>
                             <td>{{ field.attributes|default_if_none:"" }}</td>
+                            <td>{{ field.description|default_if_none:"" }}</td>
                             {% if schema.include_field_usage %}
                                 <td>{{ field.field_usage_display|safe }}</td>
                             {% endif %}

@@ -1,18 +1,20 @@
 from __future__ import absolute_import
-from celery import Celery
-from django.conf import settings
-import os
+
 import datetime
+import os
 import traceback
+import urllib
+import json
+
+from celery import Celery
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'schemalister.settings')
 
 app = Celery('tasks', broker=os.environ.get('REDISTOGO_URL', 'redis://localhost'))
 
-from getschema.models import Schema, Object, Field, Debug, FieldUsage
+from getschema.models import Object, Field, Debug
 from django.conf import settings
 from . import utils
-import json
 import requests
 
 
@@ -147,7 +149,7 @@ def get_objects_and_fields(schema):
 
                 object_name = sObject['name']
 
-                if object_name in standard_objects or sObject['name'].endswith('__c'):
+                if object_name in standard_objects: # or sObject['name'].endswith('__c'):
 
                     # Skip managed package objects if we don't want them
                     # Counting to see if "__" appears twice in the object name.
@@ -168,6 +170,27 @@ def get_objects_and_fields(schema):
 
                     object_describe = requests.get(describeURL, headers=headers)
 
+                    # because description is not part of the sObject describe's response we have to make a separate
+                    # soql query to fieldDefinition
+
+                    # curl
+                    # -H 'Authorization: Bearer 00D0S000000DNyj!AQgAQM_Opn31IjPZVDtLhkNNxFzTYzo_tM1nNUTDG9mtlSACgj85sxPoMwQZPQEEHp4Bna73I.JM9x267zdV_jSYCnmdKnV.'
+                    # -H 'Content-type: application/json'
+                    # https://transformholding--qa.my.salesforce.com/services/data/v47.0/query/?q="select+Label,+QualifiedApiName,+Description+from+FieldDefinition+where+EntityDefinitionId='Account'"
+
+                    query_url = instance_url + '/services/data/v' + str(settings.SALESFORCE_API_VERSION) \
+                                + '.0/query/?q=' + urllib.quote_plus(
+                        'select' + ' Label, QualifiedApiName, Description from FieldDefinition where EntityDefinitionId') \
+                                + "=" + "'{0}'".format(object_name)
+
+                    # print("===> queryUrl: ", query_url)
+                    # print("*** GET - description(" + object_name + "): ", query_url)
+
+                    object_description = requests.get(query_url, headers=headers)
+                    field_descriptions = object_description.json()['records']
+
+                    # print("******* Description JSON", object_description.json())
+
                     # Loop through fields
                     for field in object_describe.json()['fields']:
 
@@ -175,6 +198,7 @@ def get_objects_and_fields(schema):
                         field_name = field['name']
 
                         # Skip field if it's managed
+
                         if not schema.include_managed_objects and field_name.count('__') > 1:
                             continue
 
@@ -183,6 +207,14 @@ def get_objects_and_fields(schema):
                         new_field.object = new_object
                         new_field.api_name = field_name
                         new_field.label = field['label']
+
+                        # find description for current api field name and return
+                        description = ""
+                        s = filter(lambda x: x["QualifiedApiName"] == field_name, field_descriptions)
+                        if s:
+                            description = json.loads(json.dumps(s))[0]['Description']
+
+                        new_field.description = description
 
                         if 'inlineHelpText' in field:
                             new_field.help_text = field['inlineHelpText']
