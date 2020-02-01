@@ -1,11 +1,13 @@
+drop table getschema_field;
+
 create table if not exists public.getschema_field
 (
 	id bigserial not null
-		constraint getscheam_field_pk
+		constraint getschema_field_pk
 			primary key,
 	object_id bigint,
-	label varchar(1000),
-	api_name varchar(1000),
+	label varchar(10485760),
+	api_name varchar(10485760),
 	data_type varchar(10485760),
 	description varchar(10485760),
 	help_text varchar(10485760),
