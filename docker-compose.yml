@@ -12,13 +12,15 @@ services:
     volumes:
       - "schemalister-postgres-data:/var/lib/postgresql/data"
   web:
-    build: .
+    build:
+        context: .
+        args:
+          - cert_path=$CERT_PATH
     command: python manage.py runsslserver --certificate /cert/fullchain1.pem --key /cert/privkey1.pem 0.0.0.0:443
     volumes:
-      - .:/code
+      - $CERT_PATH:/cert
     ports:
-      - "80:80"
-      - "443:443"
+      - "444:443"
     depends_on:
       - db
     environment:
@@ -28,5 +30,5 @@ services:
       - SECRET_KEY=ScNz#8IlfJ6p#hM5tKnd
       - ADMIN_NAME="Rick Pearson"
       - ADMIN_EMAIL=pwpearson@gmail.com
-      - SALESFORCE_REDIRECT_URI=https://pwpearson.com:8000/oauth_response
+      - SALESFORCE_REDIRECT_URI=https://pwpearson.com:444/oauth_response
       - DEBUG=1
